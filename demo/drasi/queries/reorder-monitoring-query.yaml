@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ContinuousQuery
+metadata:
+  name: reorder-monitoring-query
+  labels:
+    drasi.io/demo: cncf-webinar
+    drasi.io/use-case: reacting-to-change
+spec:
+  mode: query
+  sources:
+    - retail-operations-source
+    - inventory-management-source
+  query: |
+    SELECT 
+      p.product_id,
+      p.name AS product_name,
+      p.supplier_id,
+      p.reorder_level,
+      COALESCE(
+        (SELECT SUM(soi.quantity) 
+         FROM supplier_order_item soi 
+         JOIN supplier_order so ON soi.order_id = so.order_id 
+         WHERE soi.product_id = p.product_id 
+         AND so.delivery_date IS NULL),
+        0
+      ) AS quantity_on_order,
+      COALESCE(
+        (SELECT SUM(coi.quantity) 
+         FROM customer_order_item coi 
+         JOIN customer_order co ON coi.order_id = co.order_id 
+         WHERE coi.product_id = p.product_id 
+         AND co.order_date >= NOW() - INTERVAL '7 days'),
+        0
+      ) AS quantity_ordered_by_customers,
+      (COALESCE(
+        (SELECT SUM(soi.quantity) 
+         FROM supplier_order_item soi 
+         JOIN supplier_order so ON soi.order_id = so.order_id 
+         WHERE soi.product_id = p.product_id 
+         AND so.delivery_date IS NOT NULL),
+        0
+      ) - COALESCE(
+        (SELECT SUM(coi.quantity) 
+         FROM customer_order_item coi 
+         JOIN customer_order co ON coi.order_id = co.order_id 
+         WHERE coi.product_id = p.product_id),
+        0
+      )) AS available_inventory
+    FROM product p
+    WHERE (
+      COALESCE(
+        (SELECT SUM(soi.quantity) 
+         FROM supplier_order_item soi 
+         JOIN supplier_order so ON soi.order_id = so.order_id 
+         WHERE soi.product_id = p.product_id 
+         AND so.delivery_date IS NOT NULL),
+        0
+      ) + COALESCE(
+        (SELECT SUM(soi.quantity) 
+         FROM supplier_order_item soi 
+         JOIN supplier_order so ON soi.order_id = so.order_id 
+         WHERE soi.product_id = p.product_id 
+         AND so.delivery_date IS NULL),
+        0
+      ) - COALESCE(
+        (SELECT SUM(coi.quantity) 
+         FROM customer_order_item coi 
+         WHERE coi.product_id = p.product_id),
+        0
+      )
+    ) <= p.reorder_level

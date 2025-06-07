@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ContinuousQuery
+metadata:
+  name: supplier-delivery-tracking-query
+  labels:
+    drasi.io/demo: cncf-webinar
+    drasi.io/use-case: reacting-to-absence-of-change
+spec:
+  mode: query
+  sources:
+    - inventory-management-source
+  query: |
+    SELECT 
+      so.order_id,
+      so.supplier_id,
+      so.order_date,
+      so.delivery_date,
+      EXTRACT(EPOCH FROM (NOW() - so.order_date))/60 AS minutes_since_order,
+      CASE 
+        WHEN so.delivery_date IS NULL AND EXTRACT(EPOCH FROM (NOW() - so.order_date))/60 >= 15 
+        THEN 'REQUIRES_MANUAL_REVIEW'
+        WHEN so.delivery_date IS NULL AND EXTRACT(EPOCH FROM (NOW() - so.order_date))/60 < 15 
+        THEN 'AWAITING_DELIVERY_DATE'
+        ELSE 'DELIVERY_DATE_PROVIDED'
+      END AS status,
+      (SELECT COUNT(*) 
+       FROM supplier_order_item soi 
+       WHERE soi.order_id = so.order_id) AS item_count,
+      (SELECT SUM(soi.quantity * soi.price) 
+       FROM supplier_order_item soi 
+       WHERE soi.order_id = so.order_id) AS total_value
+    FROM supplier_order so
+    WHERE so.delivery_date IS NULL 
+    AND EXTRACT(EPOCH FROM (NOW() - so.order_date))/60 >= 15
