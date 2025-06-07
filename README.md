@@ -27,14 +27,17 @@ When the available inventory of a product is less than or equal to its reorder l
 ### Use Case 2 (reacting to the absence of)
 When an order is placed with a supplier, if the supplier has not provided a delivery date within 15 minutes, the system will flag the order for manual review.
 
-# Databases
-Database 1: Retail Operations
+## Databases
+
+### Database 1: Retail Operations
+
 Technology: PostgreSQL
 Tables:
 - customer_order: Contains order details including order ID, customer ID, order date.
 - customer_order_item: Contains items in each order, including order ID, product ID, quantity, and price.
 
-Database 2: Inventory Management
+### Database 2: Inventory Management
+
 Technology: PostgreSQL
 Tables:
 - supplier_order: Contains order details with suppliers including order ID, supplier ID, order date, and delivery date.
