@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS product (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
-    reorder_level INTEGER NOT NULL CHECK (reorder_level >= 0)
+    reorder_level INTEGER NOT NULL CHECK (reorder_level >= 0),
+    qty_on_hand INTEGER NOT NULL DEFAULT 0 CHECK (qty_on_hand >= 0)
 );
 
 -- Supplier Orders Table

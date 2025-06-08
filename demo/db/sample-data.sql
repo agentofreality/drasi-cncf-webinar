@@ -4,13 +4,13 @@
 -- Connect to inventory_management database and insert products
 \c inventory_management;
 
--- Insert sample products with different reorder levels
-INSERT INTO product (product_id, supplier_id, name, description, price, reorder_level) VALUES
-('PROD-001', 'SUPP-001', 'Wireless Headphones', 'Premium wireless headphones with noise cancellation', 99.99, 10),
-('PROD-002', 'SUPP-001', 'Bluetooth Speaker', 'Portable bluetooth speaker with 12-hour battery', 49.99, 5),
-('PROD-003', 'SUPP-002', 'Laptop Stand', 'Adjustable aluminum laptop stand for better ergonomics', 29.99, 15),
-('PROD-004', 'SUPP-002', 'USB-C Cable', 'High-speed USB-C charging and data cable 6ft', 12.99, 25),
-('PROD-005', 'SUPP-003', 'Wireless Mouse', 'Ergonomic wireless mouse with precision tracking', 24.99, 8)
+-- Insert sample products with qty_on_hand higher than reorder_level
+INSERT INTO product (product_id, supplier_id, name, description, price, reorder_level, qty_on_hand) VALUES
+('PROD-001', 'SUPP-001', 'Wireless Headphones', 'Premium wireless headphones with noise cancellation', 99.99, 10, 25),
+('PROD-002', 'SUPP-001', 'Bluetooth Speaker', 'Portable bluetooth speaker with 12-hour battery', 49.99, 5, 18),
+('PROD-003', 'SUPP-002', 'Laptop Stand', 'Adjustable aluminum laptop stand for better ergonomics', 29.99, 15, 40),
+('PROD-004', 'SUPP-002', 'USB-C Cable', 'High-speed USB-C charging and data cable 6ft', 12.99, 25, 75),
+('PROD-005', 'SUPP-003', 'Wireless Mouse', 'Ergonomic wireless mouse with precision tracking', 24.99, 8, 20)
 ON CONFLICT (product_id) DO NOTHING;
 
 -- Connect to retail_operations database and insert customer orders
