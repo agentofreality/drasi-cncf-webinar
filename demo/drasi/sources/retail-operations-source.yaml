@@ -1,20 +1,15 @@
 apiVersion: v1
 kind: Source
-metadata:
-  name: retail-operations-source
-  labels:
-    drasi.io/demo: cncf-webinar
+name: retail-operations-source
 spec:
   kind: PostgreSQL
-  services:
-    - id: retail-ops-db
-      endpoint: postgresql://postgres:password@localhost:5432/retail_operations
-  tables:
-    customer_order:
-      - customer_id
-      - order_date
-    customer_order_item:
-      - order_id
-      - product_id
-      - quantity
-      - price
+  properties:
+    host: host.docker.internal
+    port: 5432
+    user: drasi_replication
+    password: drasi_password
+    database: retail_operations
+    ssl: false
+    tables:
+      - public.customer_order
+      - public.customer_order_item
