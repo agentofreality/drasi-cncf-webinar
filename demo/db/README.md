@@ -18,7 +18,7 @@ The demo uses two PostgreSQL databases configured with **logical replication** (
 
 ### Setup Scripts
 - `start-postgres.sh` - Start PostgreSQL with logical replication enabled
-- `init-databases.sh` - Initialize both databases with tables
+- `init-databases.sh` - Initialize both databases with tables and stored procedures
 - `setup-replication.sh` - Configure Drasi replication user and permissions
 - `load-sample-data.sh` - Load sample data
 
@@ -27,6 +27,7 @@ The demo uses two PostgreSQL databases configured with **logical replication** (
 - `postgresql.conf` - PostgreSQL configuration with logical replication enabled
 - `pg_hba.conf` - Authentication configuration for replication connections
 - `setup-replication.sql` - SQL script for setting up replication user
+- `stored-procedures.sql` - Stored procedures for automatic reordering functionality
 
 ## Quick Start
 
@@ -99,6 +100,31 @@ docker exec postgres-demo psql -U drasi_replication -d retail_operations -c "SEL
 - User: `postgres`
 - Password: `password`
 
+## Stored Procedures
+
+### public.add_order(supplier_id, product_id, quantity)
+
+This stored procedure is used by Drasi reactions to automatically create supplier orders:
+
+**Parameters:**
+- `supplier_id` (VARCHAR(50)) - ID of the supplier to order from
+- `product_id` (VARCHAR(50)) - Product ID to reorder
+- `quantity` (INTEGER) - Quantity to order
+
+**Returns:** VARCHAR(50) - The generated order ID
+
+**Example:**
+```sql
+SELECT public.add_order('SUPP-001', 'PROD-001', 20);
+```
+
+**Functionality:**
+- Generates unique order ID with format: `AUTO-YYYYMMDD-HHMMSS-{product_id}`
+- Creates entry in `supplier_order` table with current timestamp
+- Creates entry in `supplier_order_item` table with product price
+- Logs the reorder action with NOTICE for demo visibility
+- Used by Drasi StoredProc reactions for automatic reordering
+
 ## Troubleshooting
 
 ### Logical Replication Not Enabled
@@ -117,6 +143,12 @@ kubectl run test-pod --image=busybox --rm -it -- nslookup host.docker.internal
 Re-run the replication setup:
 ```bash
 ./setup-replication.sh
+```
+
+### Stored Procedure Issues
+Test the stored procedure manually:
+```bash
+docker exec postgres-demo psql -U drasi_replication -d inventory_management -c "SELECT public.add_order('SUPP-001', 'PROD-001', 20);"
 ```
 
 # Verify it's running

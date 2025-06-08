@@ -8,6 +8,9 @@ CREATE USER drasi_replication WITH REPLICATION LOGIN PASSWORD 'drasi_password';
 GRANT CONNECT ON DATABASE retail_operations TO drasi_replication;
 GRANT CONNECT ON DATABASE inventory_management TO drasi_replication;
 
+-- Grant superuser privileges needed for filtered publication creation
+ALTER USER drasi_replication WITH SUPERUSER;
+
 -- Create replication groups for table ownership management
 CREATE ROLE retail_operations_replication;
 CREATE ROLE inventory_management_replication;
@@ -43,6 +46,10 @@ ALTER TABLE customer_order_item OWNER TO retail_operations_replication;
 GRANT USAGE ON SCHEMA public TO drasi_replication;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO drasi_replication;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO drasi_replication;
+
+-- Grant INSERT permissions for supplier tables (needed for stored procedure reactions)
+GRANT INSERT ON supplier_order TO drasi_replication;
+GRANT INSERT ON supplier_order_item TO drasi_replication;
 
 -- Grant permissions on future tables (in case new tables are created)
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO drasi_replication;

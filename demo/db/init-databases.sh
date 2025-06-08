@@ -83,6 +83,10 @@ execute_sql_file "retail_operations" "$(dirname "$0")/retail_operations.sql"
 echo "Initializing inventory management database..."
 execute_sql_file "inventory_management" "$(dirname "$0")/inventory_management.sql"
 
+# Create stored procedures  
+echo "Creating stored procedures..."
+execute_sql_file "inventory_management" "$(dirname "$0")/stored-procedures.sql"
+
 echo "Database initialization completed successfully!"
 echo ""
 echo "Databases ready:"
