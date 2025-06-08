@@ -83,37 +83,63 @@ The reaction demonstrates how Drasi can automatically trigger business processes
 - Drasi installed and running
 - Both PostgreSQL databases initialized (see `../db/README.md`)
 
+**Note**: Resources should be deployed in order (sources first, then queries, then reactions) and you should wait for each resource to be ready before proceeding to the next step.
+
 ### Apply Sources
 ```bash
-kubectl apply -f sources/retail-operations-source.yaml
-kubectl apply -f sources/inventory-management-source.yaml
+drasi apply -f sources/retail-operations-source.yaml
+drasi wait source retail-operations-source
+
+drasi apply -f sources/inventory-management-source.yaml
+drasi wait source inventory-management-source
 ```
 
 ### Apply Continuous Queries
 ```bash
-kubectl apply -f queries/reorder-monitoring-query.yaml
-kubectl apply -f queries/supplier-delivery-tracking-query.yaml
+drasi apply -f queries/reorder-monitoring-query.yaml
+drasi wait query reorder-monitoring-query
+
+drasi apply -f queries/supplier-delivery-tracking-query.yaml
+drasi wait query supplier-delivery-tracking-query
 ```
 
 ### Apply Reactions
 ```bash
-kubectl apply -f reactions/reorder-reaction.yaml
+drasi apply -f reactions/reorder-reaction.yaml
+drasi wait reaction reorder-reaction
 ```
 
 ### Verify Deployment
 ```bash
 # Check sources
-kubectl get sources
+drasi list source
 
 # Check continuous queries
-kubectl get continuousqueries
+drasi list query
 
 # Check reactions
-kubectl get reactions
+drasi list reaction
 
 # View query results
-kubectl logs -l app=drasi-query-container
+drasi watch reorder-monitoring-query
+drasi watch supplier-delivery-tracking-query
 ```
+
+### Alternative: Use Deployment Script
+
+For convenience, you can deploy all resources at once:
+
+```bash
+./deploy-drasi.sh
+```
+
+This script will:
+1. Check that the Drasi CLI is installed
+2. Verify Drasi is running
+3. Deploy all sources, queries, and reactions in order
+4. Wait for each resource to be ready before proceeding
+5. Verify the deployment
+6. Provide troubleshooting commands
 
 ## Demo Workflow
 

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ContinuousQuery
+name: supplier-delivery-date
+spec:
+  mode: query
+  sources:
+    subscriptions:
+      - id: inventory-management-source
+  query: >
+    MATCH (so:supplier_order)
+    WHERE drasi.trueFor(so.delivery_date IS NULL, duration({seconds: 15}))
+    RETURN so.order_id AS order_id,
+           so.supplier_id AS supplier_id,
+           so.order_date AS order_date

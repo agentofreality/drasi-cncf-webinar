@@ -7,23 +7,26 @@ set -e
 
 echo "Deploying Drasi Sources and Continuous Queries for CNCF Webinar Demo..."
 
-# Function to check if kubectl is available
-check_kubectl() {
-    if ! command -v kubectl &> /dev/null; then
-        echo "Error: kubectl is not installed or not in PATH"
+# Function to check if drasi CLI is available
+check_drasi_cli() {
+    if ! command -v drasi &> /dev/null; then
+        echo "Error: drasi CLI is not installed or not in PATH"
+        echo "Please install the Drasi CLI first."
+        echo "Visit: https://drasi.io/reference/command-line-interface/"
         exit 1
     fi
 }
 
-# Function to check if Drasi CRDs are installed
-check_drasi_crds() {
-    echo "Checking for Drasi CRDs..."
-    if ! kubectl get crd sources.drasi.io &> /dev/null; then
-        echo "Error: Drasi CRDs not found. Please install Drasi first."
+# Function to check if Drasi is installed and running
+check_drasi_installation() {
+    echo "Checking Drasi installation..."
+    if ! drasi list source &> /dev/null; then
+        echo "Error: Drasi is not properly installed or not running."
+        echo "Please install and start Drasi first."
         echo "Visit: https://drasi.io/docs/getting-started/"
         exit 1
     fi
-    echo "Drasi CRDs found."
+    echo "Drasi is installed and accessible."
 }
 
 # Function to apply sources
@@ -31,12 +34,18 @@ deploy_sources() {
     echo "Deploying Drasi Sources..."
     
     echo "  - Applying retail-operations-source..."
-    kubectl apply -f "$(dirname "$0")/sources/retail-operations-source.yaml"
+    drasi apply -f "$(dirname "$0")/sources/retail-operations-source.yaml"
+    
+    echo "  - Waiting for retail-operations-source to be ready..."
+    drasi wait source retail-operations-source
     
     echo "  - Applying inventory-management-source..."
-    kubectl apply -f "$(dirname "$0")/sources/inventory-management-source.yaml"
+    drasi apply -f "$(dirname "$0")/sources/inventory-management-source.yaml"
     
-    echo "Sources deployed successfully."
+    echo "  - Waiting for inventory-management-source to be ready..."
+    drasi wait source inventory-management-source
+    
+    echo "Sources deployed and ready."
 }
 
 # Function to apply continuous queries
@@ -44,12 +53,18 @@ deploy_queries() {
     echo "Deploying Continuous Queries..."
     
     echo "  - Applying reorder-monitoring-query..."
-    kubectl apply -f "$(dirname "$0")/queries/reorder-monitoring-query.yaml"
+    drasi apply -f "$(dirname "$0")/queries/reorder-monitoring-query.yaml"
+    
+    echo "  - Waiting for reorder-monitoring-query to be ready..."
+    drasi wait query reorder-monitoring-query
     
     echo "  - Applying supplier-delivery-tracking-query..."
-    kubectl apply -f "$(dirname "$0")/queries/supplier-delivery-tracking-query.yaml"
+    drasi apply -f "$(dirname "$0")/queries/supplier-delivery-tracking-query.yaml"
     
-    echo "Continuous Queries deployed successfully."
+    echo "  - Waiting for supplier-delivery-tracking-query to be ready..."
+    drasi wait query supplier-delivery-tracking-query
+    
+    echo "Continuous Queries deployed and ready."
 }
 
 # Function to apply reactions
@@ -57,9 +72,12 @@ deploy_reactions() {
     echo "Deploying Reactions..."
     
     echo "  - Applying reorder-reaction..."
-    kubectl apply -f "$(dirname "$0")/reactions/reorder-reaction.yaml"
+    drasi apply -f "$(dirname "$0")/reactions/reorder-reaction.yaml"
     
-    echo "Reactions deployed successfully."
+    echo "  - Waiting for reorder-reaction to be ready..."
+    drasi wait reaction reorder-reaction
+    
+    echo "Reactions deployed and ready."
 }
 
 # Function to verify deployment
@@ -67,15 +85,15 @@ verify_deployment() {
     echo "Verifying deployment..."
     
     echo "Sources:"
-    kubectl get sources -l drasi.io/demo=cncf-webinar
+    drasi list source
     
     echo ""
     echo "Continuous Queries:"
-    kubectl get continuousqueries -l drasi.io/demo=cncf-webinar
+    drasi list query
     
     echo ""
     echo "Reactions:"
-    kubectl get reactions -l drasi.io/demo=cncf-webinar
+    drasi list reaction
     
     echo ""
     echo "Deployment verification completed."
@@ -83,8 +101,8 @@ verify_deployment() {
 
 # Main execution
 main() {
-    check_kubectl
-    check_drasi_crds
+    check_drasi_cli
+    check_drasi_installation
     deploy_sources
     deploy_queries
     deploy_reactions
@@ -96,11 +114,14 @@ main() {
     echo "Next steps:"
     echo "1. Ensure your PostgreSQL databases are running and accessible"
     echo "2. Insert sample data to trigger the continuous queries"
-    echo "3. Monitor query results with: kubectl logs -l app=drasi-query-container"
+    echo "3. Monitor query results with: drasi watch reorder-monitoring-query"
     echo ""
     echo "For troubleshooting, check:"
-    echo "  kubectl describe sources"
-    echo "  kubectl describe continuousqueries"
+    echo "  drasi describe source retail-operations-source"
+    echo "  drasi describe source inventory-management-source"
+    echo "  drasi describe query reorder-monitoring-query"
+    echo "  drasi describe query supplier-delivery-tracking-query"
+    echo "  drasi describe reaction reorder-reaction"
 }
 
 main "$@"

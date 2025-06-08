@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ContinuousQuery
+name: product-reorder
+spec:
+  mode: query
+  sources:
+    subscriptions:
+      - id: retail-operations-source
+      - id: inventory-management-source
+  query: >
+    MATCH (p:product)
+    OPTIONAL MATCH (soi:supplier_order_item), (so:supplier_order)
+    WHERE soi.product_id = p.product_id AND soi.order_id = so.order_id AND so.delivery_date IS NULL
+    OPTIONAL MATCH (coi:customer_order_item), (co:customer_order)  
+    WHERE coi.product_id = p.product_id AND coi.order_id = co.order_id 
+      AND co.order_date >= datetime() - duration({days: 7})
+    WITH p,
+         COALESCE(sum(soi.quantity), 0) AS quantity_on_order,
+         COALESCE(sum(coi.quantity), 0) AS quantity_ordered_by_customers
+    WITH p, quantity_on_order, quantity_ordered_by_customers,
+         p.qty_on_hand + quantity_on_order - quantity_ordered_by_customers AS available_inventory
+    WHERE available_inventory <= p.reorder_level
+    RETURN p.product_id AS product_id,
+           p.name AS product_name,
+           p.supplier_id AS supplier_id,
+           p.reorder_level AS reorder_level,
+           p.qty_on_hand AS qty_on_hand,
+           quantity_on_order,
+           quantity_ordered_by_customers,
+           available_inventory

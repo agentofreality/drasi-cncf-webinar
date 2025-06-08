@@ -1,52 +1,19 @@
-apiVersion: v1
+apiVersion: drasi.io/v1alpha1
 kind: Reaction
 metadata:
   name: reorder-reaction
   labels:
     drasi.io/demo: cncf-webinar
-    drasi.io/use-case: automatic-reordering
 spec:
-  kind: StoredProcedure
+  kind: StoredProc
   queries:
     - reorder-monitoring-query
-  config:
-    endpoint: postgresql://postgres:password@localhost:5432/inventory_management
-    procedure: |
-      CREATE OR REPLACE FUNCTION handle_reorder_event()
-      RETURNS trigger AS $$
-      DECLARE
-          new_order_id VARCHAR(50);
-          reorder_quantity INTEGER;
-      BEGIN
-          -- Generate a unique order ID
-          new_order_id := 'SUPP-ORD-' || EXTRACT(EPOCH FROM NOW())::BIGINT || '-' || NEW.product_id;
-          
-          -- Calculate reorder quantity (reorder level * 2 for demo purposes)
-          reorder_quantity := NEW.reorder_level * 2;
-          
-          -- Insert new supplier order
-          INSERT INTO supplier_order (order_id, supplier_id, order_date, delivery_date)
-          VALUES (new_order_id, NEW.supplier_id, NOW(), NULL);
-          
-          -- Insert supplier order item
-          INSERT INTO supplier_order_item (id, order_id, product_id, quantity, price)
-          VALUES (
-              'ITEM-' || new_order_id, 
-              new_order_id, 
-              NEW.product_id, 
-              reorder_quantity, 
-              (SELECT price FROM product WHERE product_id = NEW.product_id)
-          );
-          
-          -- Log the reorder action (for demo visibility)
-          RAISE NOTICE 'Automatic reorder created: Order % for product % (quantity: %)', 
-              new_order_id, NEW.product_id, reorder_quantity;
-          
-          RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    triggerConfig:
-      table: reorder_monitoring_query_results
-      events:
-        - INSERT
-      function: handle_reorder_event
+  properties:
+    addedResultCommand: "SELECT public.add_order('{{ .supplier_id }}', '{{ .product_id }}', {{ .reorder_level }} * 2);"
+    databaseClient: pg
+    databaseHostname: host.docker.internal
+    databasePort: 5432
+    databaseUser: drasi_replication
+    databaseDbname: inventory_management
+    databasePassword: drasi_password
+    databaseSsl: false
