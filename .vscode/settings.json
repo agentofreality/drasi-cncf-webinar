@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "CNCF Demo",
+            "database": "inventory_management",
+            "username": "postgres",
+            "password": "password"
+        }
+    ]
+}
